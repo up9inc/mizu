@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Filters} from "./Filters";
 import {EntriesList} from "./EntriesList";
-import {makeStyles} from "@material-ui/core";
+import {makeStyles, Button} from "@material-ui/core";
 import "./style/TrafficPage.sass";
 import styles from './style/EntriesList.module.sass';
 import {EntryDetailed} from "./EntryDetailed";
@@ -13,6 +13,7 @@ import Api, {MizuWebsocketURL} from "../helpers/api";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import debounce from 'lodash/debounce';
+import OasDModal from "./OasDialog/OasModal";
 
 const useLayoutStyles = makeStyles(() => ({
     details: {
@@ -72,6 +73,10 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({setAnalyzeStatus, onTLS
     const [truncatedTimestamp, setTruncatedTimestamp] = useState(0);
 
     const [startTime, setStartTime] = useState(0);
+
+    const [openModal, setOpenModal] = useState(false);
+    const handleOpenModal = () => setOpenModal(true);
+    const handleCloseModal = () => setOpenModal(false);
 
     const handleQueryChange = useMemo(() => debounce(async (query: string) => {
         if (!query) {
@@ -266,9 +271,11 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({setAnalyzeStatus, onTLS
         }
     }
 
+
     return (
         <div className="TrafficPage">
             <div className="TrafficPageHeader">
+                <div className="TrafficPageStreameStatus">
                 <img className="playPauseIcon" style={{visibility: connection === ConnectionStatus.Connected ? "visible" : "hidden"}} alt="pause"
                     src={pauseIcon} onClick={toggleConnection}/>
                 <img className="playPauseIcon" style={{position: "absolute", visibility: connection === ConnectionStatus.Connected ? "hidden" : "visible"}} alt="play"
@@ -279,7 +286,26 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({setAnalyzeStatus, onTLS
                         <div className={"indicator " + getConnectionStatusClass(false)}/>
                     </div>
                 </div>
+                </div>
+                <div>
+                <Button
+                        type="submit"
+                        variant="contained"
+                        style={{
+                            margin: "2px 0px 0px 0px",
+                            backgroundColor: variables.blueColor,
+                            fontWeight: 600,
+                            borderRadius: "4px",
+                            color: "#fff",
+                            textTransform: "none",
+                        }}
+                        onClick={handleOpenModal}
+                    >
+                        Show OAS
+                    </Button>
+                </div>
             </div>
+                <OasDModal openModal={openModal} handleCloseModal={handleCloseModal}/>       
             {<div className="TrafficPage-Container">
                 <div className="TrafficPage-ListContainer">
                     <Filters
