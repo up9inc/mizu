@@ -19,6 +19,7 @@ import (
 	tapApi "github.com/up9inc/mizu/tap/api"
 
 	"mizuserver/pkg/models"
+	"mizuserver/pkg/oas"
 	"mizuserver/pkg/resolver"
 	"mizuserver/pkg/utils"
 
@@ -113,6 +114,15 @@ func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extension
 		disableOASValidation = true
 	}
 
+	entries := make(chan har.Entry, 100) // buffer up to 100 entries for OAS processing
+	go func() {
+		err := oas.EntriesToSpecs(entries, oas.ServiceSpecs)
+		if err != nil {
+			logger.Log.Warningf("Failed to generate specs from traffic: %s", err)
+			// close(entries)
+		}
+	}()
+
 	for item := range outputItems {
 		providers.EntryAdded()
 
@@ -139,6 +149,10 @@ func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extension
 				rules, _, _ := models.RunValidationRulesState(*harEntry, mizuEntry.Destination.Name)
 				baseEntry.Rules = rules
 			}
+
+			// TODO: without any buffering, this would block if OAS gen is slow
+			// working with MizuEntry is very difficult, so we rely on harEntry
+			entries <- *harEntry
 		}
 
 		data, err := json.Marshal(mizuEntry)
