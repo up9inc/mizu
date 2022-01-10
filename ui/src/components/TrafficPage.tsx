@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Filters } from "./Filters";
 import { EntriesList } from "./EntriesList";
-import {
-  makeStyles,
-  FormControl,
-  MenuItem,
-} from "@material-ui/core";
+import { makeStyles, FormControl, MenuItem, Button } from "@material-ui/core";
 import { Select } from "./UI/Select";
 import "./style/TrafficPage.sass";
 import styles from "./style/EntriesList.module.sass";
@@ -82,23 +78,10 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
   const [startTime, setStartTime] = useState(0);
 
   const [openModal, setOpenModal] = useState(false);
+
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
 
-  const [oasServices, setOASservices] = useState([]);
-  const [selectedOASService, setSelectedOASService] = useState("");
-
-  useEffect(() => {
-    (async () => {
-        try {
-            const services = await api.getOASAServices();
-            setOASservices(services);
-        }
-        catch(e){
-            console.error(e);
-        }
-    })();
-  }, []);
 
   const handleQueryChange = useMemo(
     () =>
@@ -301,11 +284,6 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
     }
   };
 
-  const onSelectedOASService = (event) => {
-    setSelectedOASService(event.target.value);
-    console.log(selectedOASService);
-    setOpenModal(true);
-  };
 
   return (
     <div className="TrafficPage">
@@ -346,39 +324,27 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
           </div>
         </div>
         <div>
-          {/* <Button
-                        type="submit"
-                        variant="contained"
-                        style={{
-                            margin: "2px 0px 0px 0px",
-                            backgroundColor: variables.blueColor,
-                            fontWeight: 600,
-                            borderRadius: "4px",
-                            color: "#fff",
-                            textTransform: "none",
-                        }}
-                        onClick={handleOpenModal}
-                    >
-                        Show OAS
-                    </Button> */}
-          <FormControl>
-            <Select
-              labelId="service-select-label"
-              id="service-select"
-              label="Show OAS"
-              placeholder="Show OAS"
-              value={selectedOASService}
-              onChange={onSelectedOASService}
-            >
-              {oasServices.map((service) => <MenuItem key={service} value={service}>
-                  {service}
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+          <Button
+            type="submit"
+            variant="contained"
+            style={{
+              margin: "2px 0px 0px 0px",
+              backgroundColor: variables.blueColor,
+              fontWeight: 600,
+              borderRadius: "4px",
+              color: "#fff",
+              textTransform: "none",
+            }}
+            onClick={handleOpenModal}
+          >
+            Show OAS
+          </Button>
         </div>
       </div>
-      <OasDModal openModal={openModal} handleCloseModal={handleCloseModal} selectedService={selectedOASService}/>
+      <OasDModal
+        openModal={openModal}
+        handleCloseModal={handleCloseModal}
+      />
       {
         <div className="TrafficPage-Container">
           <div className="TrafficPage-ListContainer">
@@ -431,7 +397,9 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
           </div>
         </div>
       }
-      {tappingStatus && <StatusBar tappingStatus={tappingStatus} />}
+      {tappingStatus && !openModal && (
+        <StatusBar tappingStatus={tappingStatus} />
+      )}
       <ToastContainer
         position="bottom-right"
         autoClose={5000}
