@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { RedocStandalone } from "redoc";
 import Api from "../../helpers/api";
 import { Select } from "../UI/Select";
+import closeIcon from "../assets/closeIcon.svg";
 
 const api = new Api();
 
@@ -15,8 +16,7 @@ const OasDModal = ({ openModal, handleCloseModal }) => {
     (async () => {
       try {
         const services = await api.getOASAServices();
-        if (!areEqual(oasServices,services))
-        setOASservices(services);
+        if (!areEqual(oasServices, services)) setOASservices(services);
       } catch (e) {
         console.error(e);
       }
@@ -36,17 +36,17 @@ const OasDModal = ({ openModal, handleCloseModal }) => {
     }
   };
 
-function areEqual(array1, array2) {
-  if (array1.length === array2.length) {
-    return array1.every(element => {
-      if (array2.includes(element)) {
-        return true;
-      }
-      return false;
-    });
+  function areEqual(array1, array2) {
+    if (array1.length === array2.length) {
+      return array1.every((element) => {
+        if (array2.includes(element)) {
+          return true;
+        }
+        return false;
+      });
+    }
+    return false;
   }
-  return false;
-}
 
   return (
     <Modal
@@ -60,22 +60,35 @@ function areEqual(array1, array2) {
     >
       <Fade in={openModal}>
         <Box>
-          <FormControl>
-            <Select
-              labelId="service-select-label"
-              id="service-select"
-              label="Show OAS"
-              placeholder="Show OAS"
-              value={selectedOASService}
-              onChange={onSelectedOASService}
-            >
-              {oasServices.map((service) => (
-                <MenuItem key={service} value={service}>
-                  {service}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "1%",
+            }}
+          >
+            <div style={{ marginLeft: "40%" }}>
+              <FormControl>
+                <Select
+                  labelId="service-select-label"
+                  id="service-select"
+                  label="Show OAS"
+                  // placeholder="Show OAS"
+                  value={selectedOASService}
+                  onChange={onSelectedOASService}
+                >
+                  {oasServices.map((service) => (
+                    <MenuItem key={service} value={service}>
+                      {service}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </div>
+            <div style={{ cursor: "pointer" }}>
+              <img src={closeIcon} alt="Back" onClick={handleCloseModal} />
+            </div>
+          </div>
           {serviceOAS && <RedocStandalone spec={serviceOAS} />}
         </Box>
       </Fade>
