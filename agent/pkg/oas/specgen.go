@@ -29,10 +29,15 @@ type SpecGen struct {
 func NewGen(server string) *SpecGen {
 	spec := new(openapi.OpenAPI)
 	spec.Version = "3.1.0"
+
 	info := openapi.Info{Title: server}
 	info.Version = "0.0"
 	spec.Info = &info
 	spec.Paths = &openapi.Paths{Items: map[openapi.PathValue]*openapi.PathObj{}}
+
+	spec.Servers = make([]*openapi.Server, 0)
+	spec.Servers = append(spec.Servers, &openapi.Server{URL: server})
+
 	gen := SpecGen{oas: spec, tree: new(Node)}
 	return &gen
 }
@@ -54,6 +59,7 @@ func (g *SpecGen) feedEntry(entry har.Entry) (string, error) {
 		return "", err
 	}
 
+	// NOTE: opId can be empty for some failed entries
 	return opId, err
 }
 
@@ -63,8 +69,16 @@ func (g *SpecGen) GetSpec() (*openapi.OpenAPI, error) {
 
 	g.tree.compact()
 
+	for _, pathop := range g.tree.listOps() {
+		if pathop.op.Summary == "" {
+			pathop.op.Summary = pathop.path
+		}
+	}
+
 	// put paths back from tree into OAS
 	g.oas.Paths = g.tree.listPaths()
+
+	suggestTags(g.oas)
 
 	// to make a deep copy, no better idea than marshal+unmarshal
 	specText, err := json.MarshalIndent(g.oas, "", "\t")
@@ -79,6 +93,79 @@ func (g *SpecGen) GetSpec() (*openapi.OpenAPI, error) {
 	}
 
 	return spec, err
+}
+
+func suggestTags(oas *openapi.OpenAPI) {
+	paths := getPathsKeys(oas.Paths.Items)
+	for len(paths) > 0 {
+		group := make([]string, 0)
+		group = append(group, paths[0])
+		paths = paths[1:]
+
+		pathsClone := append(paths[:0:0], paths...)
+		for _, path := range pathsClone {
+			if getSimilarPrefix([]string{group[0], path}) != "" {
+				group = append(group, path)
+				paths = deleteFromSlice(paths, path)
+			}
+		}
+
+		common := getSimilarPrefix(group)
+
+		if len(group) > 1 {
+			for _, path := range group {
+				pathObj := oas.Paths.Items[openapi.PathValue(path)]
+				for _, op := range getOps(pathObj) {
+					if op.Tags == nil {
+						op.Tags = make([]string, 0)
+					}
+					// only add tags if not present
+					if len(op.Tags) == 0 {
+						op.Tags = append(op.Tags, common)
+					}
+				}
+			}
+		}
+
+		//groups[common] = group
+	}
+}
+
+func getSimilarPrefix(strs []string) string {
+	chunked := make([][]string, 0)
+	for _, item := range strs {
+		chunked = append(chunked, strings.Split(item, "/"))
+	}
+
+	cmn := longestCommonXfix(chunked, true)
+	res := make([]string, 0)
+	for _, chunk := range cmn {
+		if chunk != "api" && !IsVersionString(chunk) && !strings.HasPrefix(chunk, "{") {
+			res = append(res, chunk)
+		}
+	}
+	return strings.Join(res[1:], ".")
+}
+
+func deleteFromSlice(s []string, val string) []string {
+	temp := s[:0]
+	for _, x := range s {
+		if x != val {
+			temp = append(temp, x)
+		}
+	}
+	return temp
+}
+
+func getPathsKeys(mymap map[openapi.PathValue]*openapi.PathObj) []string {
+	keys := make([]string, len(mymap))
+
+	i := 0
+	for k := range mymap {
+		keys[i] = string(k)
+		i++
+	}
+	return keys
 }
 
 func (g *SpecGen) handlePathObj(entry *har.Entry) (string, error) {
@@ -110,7 +197,11 @@ func (g *SpecGen) handlePathObj(entry *har.Entry) (string, error) {
 	node := g.tree.getOrSet(split, new(openapi.PathObj))
 	opObj, err := handleOpObj(entry, node.ops)
 
-	return opObj.OperationID, err
+	if opObj != nil {
+		return opObj.OperationID, err
+	}
+
+	return "", err
 }
 
 func handleOpObj(entry *har.Entry, pathObj *openapi.PathObj) (*openapi.Operation, error) {
@@ -257,10 +348,22 @@ func fillContent(reqResp reqResp, respContent openapi.Content, ctype string, err
 		text = decRespText(reqResp.Resp.Content)
 	}
 
-	exampleMsg, err := json.Marshal(text)
-	if err != nil {
-		return nil, err
+	var exampleMsg []byte
+	// try treating it as json
+	any, isJSON := anyJSON(text)
+	if isJSON {
+		// re-marshal with forced indent
+		exampleMsg, err = json.MarshalIndent(any, "", "\t")
+		if err != nil {
+			panic("Failed to re-marshal value, super-strange")
+		}
+	} else {
+		exampleMsg, err = json.Marshal(text)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	content.Example = exampleMsg
 	return respContent[ctype], nil
 }
@@ -375,7 +478,7 @@ func getOpObj(pathObj *openapi.PathObj, method string, createIfNone bool) (*open
 	case "trace":
 		op = &pathObj.Trace
 	default:
-		return nil, false, errors.New("Unsupported HTTP method: " + method)
+		return nil, false, errors.New("unsupported HTTP method: " + method)
 	}
 
 	isMissing := false

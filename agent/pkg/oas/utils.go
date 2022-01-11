@@ -231,3 +231,114 @@ func fillParamExample(param **openapi.Examples, exampleValue string) error {
 
 	return nil
 }
+
+func longestCommonXfix(strs [][]string, pre bool) []string { // https://github.com/jpillora/longestcommon
+	empty := make([]string, 0)
+	//short-circuit empty list
+	if len(strs) == 0 {
+		return empty
+	}
+	xfix := strs[0]
+	//short-circuit single-element list
+	if len(strs) == 1 {
+		return xfix
+	}
+	//compare first to rest
+	for _, str := range strs[1:] {
+		xfixl := len(xfix)
+		strl := len(str)
+		//short-circuit empty strings
+		if xfixl == 0 || strl == 0 {
+			return empty
+		}
+		//maximum possible length
+		maxl := xfixl
+		if strl < maxl {
+			maxl = strl
+		}
+		//compare letters
+		if pre {
+			//prefix, iterate left to right
+			for i := 0; i < maxl; i++ {
+				if xfix[i] != str[i] {
+					xfix = xfix[:i]
+					break
+				}
+			}
+		} else {
+			//suffix, iternate right to left
+			for i := 0; i < maxl; i++ {
+				xi := xfixl - i - 1
+				si := strl - i - 1
+				if xfix[xi] != str[si] {
+					xfix = xfix[xi+1:]
+					break
+				}
+			}
+		}
+	}
+	return xfix
+}
+
+// returns all non-nil ops in PathObj
+func getOps(pathObj *openapi.PathObj) []*openapi.Operation {
+	ops := []**openapi.Operation{&pathObj.Get, &pathObj.Patch, &pathObj.Put, &pathObj.Options, &pathObj.Post, &pathObj.Trace, &pathObj.Head, &pathObj.Delete}
+	res := make([]*openapi.Operation, 0)
+	for _, opp := range ops {
+		if *opp == nil {
+			continue
+		}
+		res = append(res, *opp)
+	}
+	return res
+}
+
+// parses JSON into any possible value
+func anyJSON(text string) (anyVal interface{}, isJSON bool) {
+	isJSON = true
+	asMap := map[string]interface{}{}
+	err := json.Unmarshal([]byte(text), &asMap)
+	if err == nil && asMap != nil {
+		return asMap, isJSON
+	}
+
+	asArray := make([]interface{}, 0)
+	err = json.Unmarshal([]byte(text), &asArray)
+	if err == nil && asArray != nil {
+		return asArray, isJSON
+	}
+
+	asString := ""
+	sPtr := &asString
+	err = json.Unmarshal([]byte(text), &sPtr)
+	if err == nil && sPtr != nil {
+		return asString, isJSON
+	}
+
+	asInt := 0
+	intPtr := &asInt
+	err = json.Unmarshal([]byte(text), &intPtr)
+	if err == nil && intPtr != nil {
+		return asInt, isJSON
+	}
+
+	asFloat := 0.0
+	floatPtr := &asFloat
+	err = json.Unmarshal([]byte(text), &floatPtr)
+	if err == nil && floatPtr != nil {
+		return asFloat, isJSON
+	}
+
+	asBool := false
+	boolPtr := &asBool
+	err = json.Unmarshal([]byte(text), &boolPtr)
+	if err == nil && boolPtr != nil {
+		return asBool, isJSON
+	}
+
+	if text == "null" {
+		return nil, isJSON
+	}
+
+	return nil, false
+}

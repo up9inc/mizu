@@ -24,7 +24,7 @@ func (n *Node) getOrSet(path NodePath, pathObjToSet *openapi.PathObj) (node *Nod
 
 	pathChunk := path[0]
 	chunkIsParam := strings.HasPrefix(pathChunk, "{") && strings.HasSuffix(pathChunk, "}")
-	chunkIsGibberish := IsGibberish(pathChunk)
+	chunkIsGibberish := IsGibberish(pathChunk) && !IsVersionString(pathChunk)
 
 	var paramObj *openapi.ParameterObj
 	if chunkIsParam && pathObjToSet != nil {
@@ -171,6 +171,21 @@ func (n *Node) listPaths() *openapi.Paths {
 	}
 
 	return paths
+}
+
+type PathAndOp struct {
+	path string
+	op   *openapi.Operation
+}
+
+func (n *Node) listOps() []PathAndOp {
+	res := make([]PathAndOp, 0)
+	for path, pathObj := range n.listPaths().Items {
+		for _, op := range getOps(pathObj) {
+			res = append(res, PathAndOp{path: string(path), op: op})
+		}
+	}
+	return res
 }
 
 func (n *Node) countParentParams() int {
