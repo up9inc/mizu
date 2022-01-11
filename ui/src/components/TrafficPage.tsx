@@ -42,7 +42,7 @@ enum ConnectionStatus {
 }
 
 interface TrafficPageProps {
-  setAnalyzeStatus: (status: any) => void;
+  setAnalyzeStatus?: (status: any) => void;
   onTLSDetected: (destAddress: string) => void;
 }
 
@@ -81,7 +81,6 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
-
 
   const handleQueryChange = useMemo(
     () =>
