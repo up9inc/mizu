@@ -343,6 +343,7 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
       <OasDModal
         openModal={openModal}
         handleCloseModal={handleCloseModal}
+        entries={entries}
       />
       {
         <div className="TrafficPage-Container">

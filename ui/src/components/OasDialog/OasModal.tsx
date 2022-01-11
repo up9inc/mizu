@@ -7,7 +7,7 @@ import closeIcon from "../assets/closeIcon.svg";
 
 const api = new Api();
 
-const OasDModal = ({ openModal, handleCloseModal }) => {
+const OasDModal = ({ openModal, handleCloseModal, entries }) => {
   const [oasServices, setOASservices] = useState([]);
   const [selectedOASService, setSelectedOASService] = useState("");
   const [serviceOAS, setServiceOAS] = useState(null);
@@ -21,15 +21,12 @@ const OasDModal = ({ openModal, handleCloseModal }) => {
         console.error(e);
       }
     })();
-  }, []);
+  }, [entries]);
 
   const onSelectedOASService = async (selectedService) => {
     setSelectedOASService(selectedService);
-    if (!selectedOASService) {
-      return;
-    }
     try {
-      const data = await api.getOASAByService(selectedOASService);
+      const data = await api.getOASAByService(selectedService);
       setServiceOAS(data);
     } catch (e) {
       console.error(e);
