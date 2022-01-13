@@ -156,6 +156,8 @@ func getTapMizuAgentConfig() *shared.MizuAgentConfig {
 		TapperResources:        config.Config.Tap.TapperResources,
 		MizuResourcesNamespace: config.Config.MizuResourcesNamespace,
 		AgentDatabasePath:      shared.DataDirPath,
+		ServiceMap:             config.Config.ServiceMap,
+		OAS:                    config.Config.OAS,
 	}
 
 	return &mizuAgentConfig
@@ -192,7 +194,7 @@ func startTapperSyncer(ctx context.Context, cancel context.CancelFunc, provider 
 		IgnoredUserAgents:        config.Config.Tap.IgnoredUserAgents,
 		MizuApiFilteringOptions:  mizuApiFilteringOptions,
 		MizuServiceAccountExists: state.mizuServiceAccountExists,
-		Istio:                    config.Config.Tap.Istio,
+		ServiceMesh:              config.Config.Tap.ServiceMesh,
 	}, startTime)
 
 	if err != nil {

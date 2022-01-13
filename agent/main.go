@@ -11,12 +11,12 @@ import (
 	"mizuserver/pkg/controllers"
 	"mizuserver/pkg/middlewares"
 	"mizuserver/pkg/models"
+	"mizuserver/pkg/oas"
 	"mizuserver/pkg/routes"
 	"mizuserver/pkg/up9"
 	"mizuserver/pkg/utils"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
@@ -115,13 +115,13 @@ func main() {
 
 		go pipeTapChannelToSocket(socketConnection, filteredOutputItemsChannel)
 	} else if *apiServerMode {
-		startBasenineServer(shared.BasenineHost, shared.BaseninePort)
+		configureBasenineServer(shared.BasenineHost, shared.BaseninePort)
 		startTime = time.Now().UnixNano() / int64(time.Millisecond)
 		api.StartResolving(*namespace)
 
 		outputItemsChannel := make(chan *tapApi.OutputChannelItem)
 		filteredOutputItemsChannel := make(chan *tapApi.OutputChannelItem)
-
+		enableExpFeatureIfNeeded()
 		go filterItems(outputItemsChannel, filteredOutputItemsChannel)
 		go api.StartReadingEntries(filteredOutputItemsChannel, nil, extensionsMap)
 
@@ -149,16 +149,13 @@ func main() {
 	logger.Log.Info("Exiting")
 }
 
-func startBasenineServer(host string, port string) {
-	cmd := exec.Command("basenine", "-addr", host, "-port", port, "-persistent")
-	cmd.Dir = config.Config.AgentDatabasePath
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Start()
-	if err != nil {
-		logger.Log.Panicf("Failed starting Basenine: %v", err)
+func enableExpFeatureIfNeeded() {
+	if config.Config.OAS {
+		oas.GetOasGeneratorInstance().Start()
 	}
+}
 
+func configureBasenineServer(host string, port string) {
 	if !wait.New(
 		wait.WithProto("tcp"),
 		wait.WithWait(200*time.Millisecond),
@@ -166,25 +163,16 @@ func startBasenineServer(host string, port string) {
 		wait.WithDeadline(5*time.Second),
 		wait.WithDebug(true),
 	).Do([]string{fmt.Sprintf("%s:%s", host, port)}) {
-		logger.Log.Panicf("Basenine is not available: %v", err)
+		logger.Log.Panicf("Basenine is not available!")
 	}
 
-	// Make a channel to gracefully exit Basenine.
-	channel := make(chan os.Signal)
-	signal.Notify(channel, os.Interrupt, syscall.SIGTERM)
-
-	// Handle the channel.
-	go func() {
-		<-channel
-		cmd.Process.Signal(syscall.SIGTERM)
-	}()
-
 	// Limit the database size to default 200MB
-	err = basenine.Limit(host, port, config.Config.MaxDBSizeBytes)
+	err := basenine.Limit(host, port, config.Config.MaxDBSizeBytes)
 	if err != nil {
 		logger.Log.Panicf("Error while limiting database size: %v", err)
 	}
 
+	// Define the macros
 	for _, extension := range extensions {
 		macros := extension.Dissector.Macros()
 		for macro, expanded := range macros {
@@ -252,7 +240,7 @@ func hostApi(socketHarOutputChannel chan<- *tapApi.OutputChannelItem) {
 
 	app.Use(DisableRootStaticCache())
 
-	if err := setUIMode(); err != nil {
+	if err := setUIFlags(); err != nil {
 		logger.Log.Errorf("Error setting ui mode, err: %v", err)
 	}
 	app.Use(static.ServeRoot("/", "./site"))
@@ -267,13 +255,16 @@ func hostApi(socketHarOutputChannel chan<- *tapApi.OutputChannelItem) {
 		routes.InstallRoutes(app)
 	}
 
+	if config.Config.OAS {
+		routes.OASRoutes(app)
+	}
+
 	routes.QueryRoutes(app)
 	routes.EntriesRoutes(app)
 	routes.MetadataRoutes(app)
 	routes.StatusRoutes(app)
 	routes.OASRoutes(app)
 	routes.NotFoundRoute(app)
-
 	utils.StartServer(app)
 }
 
@@ -288,13 +279,14 @@ func DisableRootStaticCache() gin.HandlerFunc {
 	}
 }
 
-func setUIMode() error {
+func setUIFlags() error {
 	read, err := ioutil.ReadFile(uiIndexPath)
 	if err != nil {
 		return err
 	}
 
 	replacedContent := strings.Replace(string(read), "__IS_STANDALONE__", strconv.FormatBool(config.Config.StandaloneMode), 1)
+	replacedContent = strings.Replace(replacedContent, "__IS_OAS_ENABLED__", strconv.FormatBool(config.Config.OAS), 1)
 
 	err = ioutil.WriteFile(uiIndexPath, []byte(replacedContent), 0)
 	if err != nil {

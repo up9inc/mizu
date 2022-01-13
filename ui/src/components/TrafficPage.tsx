@@ -13,7 +13,7 @@ import Api, { MizuWebsocketURL } from "../helpers/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import debounce from "lodash/debounce";
-import OasDModal from "./OasDialog/OasModal";
+import OasModal from "./OasModal/OasModal";
 
 const useLayoutStyles = makeStyles(() => ({
   details: {
@@ -76,14 +76,14 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
 
   const [startTime, setStartTime] = useState(0);
 
-  const [openModal, setOpenModal] = useState(false);
+  const [openOasModal, setOasOpenModal] = useState(false);
 
-  const handleOpenModal = () => setOpenModal(true);
-  const handleCloseModal = () => setOpenModal(false);
+  const handleOpenModal = () => setOasOpenModal(true);
+  const handleCloseModal = () => setOasOpenModal(false);
 
-  const handleQueryChange = useMemo(
-    () =>
-      debounce(async (query: string) => {
+    const scrollableRef = useRef(null);
+
+    const handleQueryChange = useMemo(() => debounce(async (query: string) => {
         if (!query) {
           setQueryBackgroundColor("#f5f5f5");
         } else {
@@ -238,6 +238,8 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
               progress: undefined,
             }
           );
+            scrollableRef.current.jumpToBottom();
+            setIsSnappedToBottom(true);
         }
         console.error(error);
       }
@@ -321,7 +323,7 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
             </div>
           </div>
         </div>
-       {window["isOasEnable"] && <div>
+       {window["isOasEnabled"] && <div>
           <Button
             type="submit"
             variant="contained"
@@ -339,64 +341,56 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
           </Button>
         </div>}
       </div>
-      {window["isOasEnable"] && <OasDModal
-        openModal={openModal}
+      {window["isOasEnabled"] && <OasModal
+        openModal={openOasModal}
         handleCloseModal={handleCloseModal}
         entries={entries}
       />}
-      {
-        <div className="TrafficPage-Container">
+      {<div className="TrafficPage-Container">
           <div className="TrafficPage-ListContainer">
-            <Filters
-              query={query}
-              setQuery={setQuery}
-              backgroundColor={queryBackgroundColor}
-              ws={ws.current}
-              openWebSocket={openWebSocket}
-            />
-            <div className={styles.container}>
-              <EntriesList
-                entries={entries}
-                setEntries={setEntries}
-                query={query}
-                listEntryREF={listEntry}
-                onSnapBrokenEvent={onSnapBrokenEvent}
-                isSnappedToBottom={isSnappedToBottom}
-                setIsSnappedToBottom={setIsSnappedToBottom}
-                queriedCurrent={queriedCurrent}
-                setQueriedCurrent={setQueriedCurrent}
-                queriedTotal={queriedTotal}
-                setQueriedTotal={setQueriedTotal}
-                startTime={startTime}
-                noMoreDataTop={noMoreDataTop}
-                setNoMoreDataTop={setNoMoreDataTop}
-                focusedEntryId={focusedEntryId}
-                setFocusedEntryId={setFocusedEntryId}
-                updateQuery={updateQuery}
-                leftOffTop={leftOffTop}
-                setLeftOffTop={setLeftOffTop}
-                isWebSocketConnectionClosed={
-                  connection === ConnectionStatus.Closed
-                }
-                ws={ws.current}
-                openWebSocket={openWebSocket}
-                leftOffBottom={leftOffBottom}
-                truncatedTimestamp={truncatedTimestamp}
-                setTruncatedTimestamp={setTruncatedTimestamp}
+              <Filters
+                  query={query}
+                  setQuery={setQuery}
+                  backgroundColor={queryBackgroundColor}
+                  ws={ws.current}
+                  openWebSocket={openWebSocket}
               />
-            </div>
+              <div className={styles.container}>
+                  <EntriesList
+                      entries={entries}
+                      setEntries={setEntries}
+                      query={query}
+                      listEntryREF={listEntry}
+                      onSnapBrokenEvent={onSnapBrokenEvent}
+                      isSnappedToBottom={isSnappedToBottom}
+                      setIsSnappedToBottom={setIsSnappedToBottom}
+                      queriedCurrent={queriedCurrent}
+                      setQueriedCurrent={setQueriedCurrent}
+                      queriedTotal={queriedTotal}
+                      setQueriedTotal={setQueriedTotal}
+                      startTime={startTime}
+                      noMoreDataTop={noMoreDataTop}
+                      setNoMoreDataTop={setNoMoreDataTop}
+                      focusedEntryId={focusedEntryId}
+                      setFocusedEntryId={setFocusedEntryId}
+                      updateQuery={updateQuery}
+                      leftOffTop={leftOffTop}
+                      setLeftOffTop={setLeftOffTop}
+                      isWebSocketConnectionClosed={connection === ConnectionStatus.Closed}
+                      ws={ws.current}
+                      openWebSocket={openWebSocket}
+                      leftOffBottom={leftOffBottom}
+                      truncatedTimestamp={truncatedTimestamp}
+                      setTruncatedTimestamp={setTruncatedTimestamp}
+                      scrollableRef={scrollableRef}
+                  />
+              </div>
           </div>
           <div className={classes.details}>
-            {selectedEntryData && (
-              <EntryDetailed
-                entryData={selectedEntryData}
-                updateQuery={updateQuery}
-              />
-            )}
+              {selectedEntryData && <EntryDetailed entryData={selectedEntryData} updateQuery={updateQuery}/>}
           </div>
-        </div>
-      }
-      {tappingStatus && !openModal && (
+      </div>}
+      {tappingStatus && !openOasModal && (
         <StatusBar tappingStatus={tappingStatus} />
       )}
       <ToastContainer
