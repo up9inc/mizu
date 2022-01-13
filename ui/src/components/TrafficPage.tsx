@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Filters } from "./Filters";
 import { EntriesList } from "./EntriesList";
-import { makeStyles, FormControl, MenuItem, Button } from "@material-ui/core";
-import { Select } from "./UI/Select";
+import { makeStyles, Button } from "@material-ui/core";
 import "./style/TrafficPage.sass";
 import styles from "./style/EntriesList.module.sass";
 import { EntryDetailed } from "./EntryDetailed";
@@ -322,7 +321,7 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
             </div>
           </div>
         </div>
-        <div>
+       {window["isOasEnable"] && <div>
           <Button
             type="submit"
             variant="contained"
@@ -338,13 +337,13 @@ export const TrafficPage: React.FC<TrafficPageProps> = ({
           >
             Show OAS
           </Button>
-        </div>
+        </div>}
       </div>
-      <OasDModal
+      {window["isOasEnable"] && <OasDModal
         openModal={openModal}
         handleCloseModal={handleCloseModal}
         entries={entries}
-      />
+      />}
       {
         <div className="TrafficPage-Container">
           <div className="TrafficPage-ListContainer">

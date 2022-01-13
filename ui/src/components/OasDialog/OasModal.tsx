@@ -21,10 +21,13 @@ const OasDModal = ({ openModal, handleCloseModal, entries }) => {
         console.error(e);
       }
     })();
-  }, [entries]);
+  }, [entries,oasServices]);
 
   const onSelectedOASService = async (selectedService) => {
     setSelectedOASService(selectedService);
+    if(oasServices.length === 0){
+      return
+    }
     try {
       const data = await api.getOASAByService(selectedService);
       setServiceOAS(data);
@@ -70,7 +73,7 @@ const OasDModal = ({ openModal, handleCloseModal, entries }) => {
                   labelId="service-select-label"
                   id="service-select"
                   label="Show OAS"
-                  // placeholder="Show OAS"
+                  placeholder="Show OAS"
                   value={selectedOASService}
                   onChange={onSelectedOASService}
                 >
