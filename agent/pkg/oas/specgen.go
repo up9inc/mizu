@@ -27,6 +27,7 @@ const LastSeenTS = "x-last-seen-ts"
 const CountersTotal = "x-counters-total"
 const CountersPerSource = "x-counters-per-source"
 const SampleId = "x-sample-entry"
+const HistoricalIDs = "x-historical-ids"
 
 type reqResp struct { // hello, generics in Go
 	Req  *har.Request
@@ -188,7 +189,7 @@ func (g *SpecGen) handlePathObj(entryWithSource *EntryWithSource) (string, error
 	}
 
 	if entry.Request.Method == "OPTIONS" {
-		logger.Log.Debugf("Dropped traffic entry due to its method: %s", urlParsed.Path)
+		logger.Log.Debugf("Dropped traffic entry due to its method: %s %s", entry.Request.Method, urlParsed.Path)
 		return "", nil
 	}
 
