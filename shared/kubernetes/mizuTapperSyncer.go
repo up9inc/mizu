@@ -80,10 +80,13 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperPods() {
 	podWatchHelper := NewPodWatchHelper(tapperSyncer.kubernetesProvider, mizuResourceRegex)
 	eventChan, errorChan := FilteredWatch(tapperSyncer.context, podWatchHelper, []string{tapperSyncer.config.MizuResourcesNamespace}, podWatchHelper)
 
+	logger.Log.Info("starting watchTapperPods")
 	for {
 		select {
 		case wEvent, ok := <-eventChan:
+			logger.Log.Info("received watchTapperPods event")
 			if !ok {
+				logger.Log.Info("watchTapperPods eventChan closed (!ok)")
 				eventChan = nil
 				continue
 			}
@@ -106,6 +109,7 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperPods() {
 
 		case err, ok := <-errorChan:
 			if !ok {
+				logger.Log.Info("watchTapperPods errorChan closed (!ok)")
 				errorChan = nil
 				continue
 			}
@@ -123,10 +127,13 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperEvents() {
 	eventWatchHelper := NewEventWatchHelper(tapperSyncer.kubernetesProvider, mizuResourceRegex, "pod")
 	eventChan, errorChan := FilteredWatch(tapperSyncer.context, eventWatchHelper, []string{tapperSyncer.config.MizuResourcesNamespace}, eventWatchHelper)
 
+	logger.Log.Info("starting watchTapperEvents")
 	for {
+		logger.Log.Info("received watchTapperEvents event")
 		select {
 		case wEvent, ok := <-eventChan:
 			if !ok {
+				logger.Log.Info("watchTapperEvents eventChan closed (!ok)")
 				eventChan = nil
 				continue
 			}
@@ -168,6 +175,7 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperEvents() {
 
 		case err, ok := <-errorChan:
 			if !ok {
+				logger.Log.Info("watchTapperEvents errorChan closed (!ok)")
 				errorChan = nil
 				continue
 			}
@@ -207,10 +215,13 @@ func (tapperSyncer *MizuTapperSyncer) watchPodsForTapping() {
 	}
 	restartTappersDebouncer := debounce.NewDebouncer(updateTappersDelay, restartTappers)
 
+	logger.Log.Info("starting watchPodsForTapping")
 	for {
 		select {
 		case wEvent, ok := <-eventChan:
+			logger.Log.Info("received watchPodsForTapping event")
 			if !ok {
+				logger.Log.Info("watchPodsForTapping eventChan closed (!ok)")
 				eventChan = nil
 				continue
 			}
@@ -252,6 +263,7 @@ func (tapperSyncer *MizuTapperSyncer) watchPodsForTapping() {
 			}
 		case err, ok := <-errorChan:
 			if !ok {
+				logger.Log.Info("watchPodsForTapping errorChan closed (!ok)")
 				errorChan = nil
 				continue
 			}

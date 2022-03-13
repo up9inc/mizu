@@ -42,6 +42,9 @@ func FilteredWatch(ctx context.Context, watcherCreator WatchCreator, targetNames
 				}
 
 				err = startWatchLoop(ctx, watcher, filterer, eventChan) // blocking
+				if err != nil {
+					logger.Log.Errorf("error returned from startWatchLoop %+v", err)
+				}
 				watcher.Stop()
 
 				select {
