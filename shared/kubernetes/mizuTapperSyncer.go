@@ -100,7 +100,7 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperPods() {
 
 			logger.Log.Debugf("Watching tapper pods loop, tapper: %v, node: %v, status: %v", pod.Name, pod.Spec.NodeName, pod.Status.Phase)
 			if pod.Spec.NodeName != "" {
-				tapperStatus := shared.TapperStatus{TapperName: pod.Name, NodeName: pod.Spec.NodeName, Status: string(pod.Status.Phase)}
+				tapperStatus := shared.TapperStatus{TapperName: pod.Name, NodeName: pod.Spec.NodeName, Status: string(pod.Status.Phase), ExtraData: "watchTapperPods"}
 				tapperSyncer.TapperStatusChangedOut <- tapperStatus
 			}
 
@@ -163,7 +163,7 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperEvents() {
 				nodeName = pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchFields[0].Values[0]
 			}
 
-			tapperStatus := shared.TapperStatus{TapperName: pod.Name, NodeName: nodeName, Status: string(pod.Status.Phase)}
+			tapperStatus := shared.TapperStatus{TapperName: pod.Name, NodeName: nodeName, Status: string(pod.Status.Phase), ExtraData: "watchTapperEvents"}
 			tapperSyncer.TapperStatusChangedOut <- tapperStatus
 
 		case err, ok := <-errorChan:

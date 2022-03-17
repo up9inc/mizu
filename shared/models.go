@@ -84,6 +84,7 @@ type TapperStatus struct {
 	TapperName string `json:"tapperName"`
 	NodeName   string `json:"nodeName"`
 	Status     string `json:"status"`
+	ExtraData  string `json:"extraData"`
 }
 
 type TappedPodStatus struct {
