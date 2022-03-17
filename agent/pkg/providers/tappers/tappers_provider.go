@@ -1,6 +1,7 @@
 package tappers
 
 import (
+	"encoding/json"
 	"os"
 	"sync"
 
@@ -77,6 +78,13 @@ func initStatus() {
 }
 
 func saveStatus() {
+	jsonStatus, err := json.MarshalIndent(status, "", "    ")
+	if err != nil {
+		logger.Log.Errorf("Error marshalling tappers status, err: %v", err)
+	} else {
+		logger.Log.Infof("New tapper status: %s", string(jsonStatus))
+	}
+
 	if err := utils.SaveJsonFile(FilePath, status); err != nil {
 		logger.Log.Errorf("Error saving tappers status, err: %v", err)
 	}
