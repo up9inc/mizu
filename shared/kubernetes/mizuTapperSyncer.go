@@ -94,9 +94,9 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperPods() {
 				continue
 			}
 
-			if tapperSyncer.startTime.After(pod.CreationTimestamp.Time) {
-				continue
-			}
+			// if tapperSyncer.startTime.After(pod.CreationTimestamp.Time) {
+			// 	continue
+			// }
 
 			logger.Log.Debugf("Watching tapper pods loop, tapper: %v, node: %v, status: %v", pod.Name, pod.Spec.NodeName, pod.Status.Phase)
 			if pod.Spec.NodeName != "" {
@@ -137,9 +137,9 @@ func (tapperSyncer *MizuTapperSyncer) watchTapperEvents() {
 				continue
 			}
 
-			if tapperSyncer.startTime.After(event.CreationTimestamp.Time) {
-				continue
-			}
+			// if tapperSyncer.startTime.After(event.CreationTimestamp.Time) {
+			// 	continue
+			// }
 
 			logger.Log.Debugf(
 				fmt.Sprintf("Watching tapper events loop, event %s, time: %v, resource: %s (%s), reason: %s, note: %s",
