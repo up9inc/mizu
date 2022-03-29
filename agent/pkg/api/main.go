@@ -120,6 +120,7 @@ func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extension
 	for item := range outputItems {
 		extension := extensionsMap[item.Protocol.Name]
 		resolvedSource, resolvedDestionation, namespace := resolveIP(item.ConnectionInfo)
+		logger.Log.Infof("DEBUG resolved %s %s %s", resolvedSource, resolvedDestionation, namespace)
 		mizuEntry := extension.Dissector.Analyze(item, resolvedSource, resolvedDestionation, namespace)
 		if extension.Protocol.Name == "http" {
 			if !disableOASValidation {
@@ -183,6 +184,7 @@ func resolveIP(connectionInfo *tapApi.ConnectionInfo) (resolvedSource string, re
 			}
 		} else {
 			resolvedSource = resolvedSourceObject.FullAddress
+			namespace = resolvedSourceObject.Namespace
 		}
 
 		unresolvedDestination := fmt.Sprintf("%s:%s", connectionInfo.ServerIP, connectionInfo.ServerPort)

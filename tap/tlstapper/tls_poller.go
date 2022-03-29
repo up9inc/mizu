@@ -61,9 +61,11 @@ func (p *tlsPoller) poll(emitter api.Emitter, options *api.TrafficFilteringOptio
 
 	go p.pollChunksPerfBuffer(chunks)
 
+	logger.Log.Info("DEBUG polling tls")
 	for {
 		select {
 		case chunk, ok := <-chunks:
+			logger.Log.Info("DEBUG got chunk")
 			if !ok {
 				return
 			}
