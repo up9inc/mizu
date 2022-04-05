@@ -99,6 +99,7 @@ func startReadingFiles(workingDir string) {
 }
 
 func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extensionsMap map[string]*tapApi.Extension) {
+	fmt.Printf(">>>>>>>>>>>>>>>> called startReadingChannel method\n")
 	if outputItems == nil {
 		panic("Channel of captured messages is nil")
 	}
@@ -107,7 +108,10 @@ func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extension
 	if err != nil {
 		panic(err)
 	}
-	connection.InsertMode()
+	err = connection.InsertMode()
+	if err != nil {
+		fmt.Printf(">>>>>>>>>>>>>>>> Error: %v\n", err)
+	}
 
 	disableOASValidation := false
 	ctx := context.Background()
@@ -117,7 +121,9 @@ func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extension
 		disableOASValidation = true
 	}
 
+	fmt.Printf(">>>>>>>>>>>>>>>> just before outputItems loop\n")
 	for item := range outputItems {
+		fmt.Printf(">>>>>>>>>>>>>>>> item: %v\n", item)
 		extension := extensionsMap[item.Protocol.Name]
 		resolvedSource, resolvedDestionation, namespace := resolveIP(item.ConnectionInfo)
 		mizuEntry := extension.Dissector.Analyze(item, resolvedSource, resolvedDestionation, namespace)
@@ -163,7 +169,12 @@ func startReadingChannel(outputItems <-chan *tapApi.OutputChannelItem, extension
 
 		providers.EntryAdded(len(data))
 
-		connection.SendText(string(data))
+		fmt.Printf(">>>>>>>>>>>>>>>> Before insert\n")
+		err = connection.SendText(string(data))
+		if err != nil {
+			fmt.Printf(">>>>>>>>>>>>>>>> Error: %v\n", err)
+		}
+		fmt.Printf(">>>>>>>>>>>>>>>> After insert\n")
 
 		serviceMapGenerator := dependency.GetInstance(dependency.ServiceMapGeneratorDependency).(servicemap.ServiceMapSink)
 		serviceMapGenerator.NewTCPEntry(mizuEntry.Source, mizuEntry.Destination, &item.Protocol)
