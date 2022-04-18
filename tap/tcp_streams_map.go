@@ -66,14 +66,16 @@ func (streamMap *tcpStreamMap) closeTimedoutTcpStreamChannels() {
 	for {
 		time.Sleep(closeTimedoutTcpChannelsIntervalMs)
 		_debug.FreeOSMemory()
+		var totalActiveTcpStreams uint64
 		streamMap.streams.Range(func(key interface{}, value interface{}) bool {
+			totalActiveTcpStreams++
 			streamWrapper := value.(*tcpStreamWrapper)
 			stream := streamWrapper.stream
 			if stream.superIdentifier.Protocol == nil {
 				if !stream.isClosed && time.Now().After(streamWrapper.createdAt.Add(tcpStreamChannelTimeout)) {
 					stream.Close()
 					diagnose.AppStats.IncDroppedTcpStreams()
-					logger.Log.Debugf("Dropped an unidentified TCP stream because of timeout. Total dropped: %d Total Goroutines: %d Timeout (ms): %d",
+					logger.Log.Infof("Dropped an unidentified TCP stream because of timeout. Total dropped: %d Total Goroutines: %d Timeout (ms): %d",
 						diagnose.AppStats.DroppedTcpStreams, runtime.NumGoroutine(), tcpStreamChannelTimeout/time.Millisecond)
 				}
 			} else {
@@ -95,5 +97,7 @@ func (streamMap *tcpStreamMap) closeTimedoutTcpStreamChannels() {
 			}
 			return true
 		})
+
+		logger.Log.Infof("CURRENT: Total active TCP Streams: %d Total Goroutines: %d Total dropped: %d Timeout (ms): %d Interval (ms): %d", totalActiveTcpStreams, runtime.NumGoroutine(), diagnose.AppStats.DroppedTcpStreams, tcpStreamChannelTimeout/time.Millisecond, closeTimedoutTcpChannelsIntervalMs/time.Millisecond)
 	}
 }
