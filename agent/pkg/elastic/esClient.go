@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"net/http"
-	"sync"
-	"time"
-
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/up9inc/mizu/shared"
 	"github.com/up9inc/mizu/shared/logger"
 	"github.com/up9inc/mizu/tap/api"
+	"net/http"
+	"sync"
+	"time"
 )
 
 type client struct {
@@ -31,20 +30,11 @@ func GetInstance() *client {
 }
 
 func (client *client) Configure(config shared.ElasticConfig) {
-	if config.Url == "" || config.User == "" || config.Password == "" {
-		if client.es != nil {
-			client.es = nil
-		}
-		logger.Log.Infof("No elastic configuration was supplied, elastic exporter disabled")
-		return
-	}
 	transport := http.DefaultTransport
 	tlsClientConfig := &tls.Config{InsecureSkipVerify: true}
 	transport.(*http.Transport).TLSClientConfig = tlsClientConfig
 	cfg := elasticsearch.Config{
-		Addresses: []string{config.Url},
-		Username:  config.User,
-		Password:  config.Password,
+		Addresses: []string{"http://elasticsearch-master.elasticsearch.svc.cluster.local:9200"},
 		Transport: transport,
 	}
 
@@ -58,12 +48,12 @@ func (client *client) Configure(config shared.ElasticConfig) {
 	if err != nil {
 		logger.Log.Errorf("Elastic client.Info() ERROR: %v", err)
 	} else {
+		defer res.Body.Close()
 		client.es = es
-		client.index = "mizu_traffic_http_" + time.Now().Format("2006_01_02_15_04")
+		client.index = "mizu_traffic_http"
 		client.insertedCount = 0
 		logger.Log.Infof("Elastic client configured, index: %s, cluster info: %v", client.index, res)
 	}
-	defer res.Body.Close()
 }
 
 func newClient() *client {
@@ -73,40 +63,31 @@ func newClient() *client {
 	}
 }
 
-type httpEntry struct {
-	Source      *api.TCP               `json:"src"`
-	Destination *api.TCP               `json:"dst"`
-	Outgoing    bool                   `json:"outgoing"`
-	CreatedAt   time.Time              `json:"createdAt"`
-	Request     map[string]interface{} `json:"request"`
-	Response    map[string]interface{} `json:"response"`
-	ElapsedTime int64                  `json:"elapsedTime"`
-}
-
 func (client *client) PushEntry(entry *api.Entry) {
 	if client.es == nil {
 		return
 	}
 
-	if entry.Protocol.Name != "http" {
-		return
-	}
-
-	entryToPush := httpEntry{
-		Source:      entry.Source,
-		Destination: entry.Destination,
-		Outgoing:    entry.Outgoing,
-		CreatedAt:   entry.StartTime,
-		Request:     entry.Request,
-		Response:    entry.Response,
-		ElapsedTime: entry.ElapsedTime,
-	}
-
-	entryJson, err := json.Marshal(entryToPush)
+	entryJson, err := json.Marshal(entry)
 	if err != nil {
 		logger.Log.Errorf("json.Marshal ERROR: %v", err)
 		return
 	}
+
+	var entryMap map[string]interface{}
+	if err := json.Unmarshal(entryJson, &entryMap); err != nil {
+		logger.Log.Errorf("json.Unmarshal ERROR: %v", err)
+		return
+	}
+
+	entryMap["insertionTime"] = time.Now()
+
+	entryJson, err = json.Marshal(entryMap)
+	if err != nil {
+		logger.Log.Errorf("json.Marshal ERROR: %v", err)
+		return
+	}
+
 	var buffer bytes.Buffer
 	buffer.WriteString(string(entryJson))
 	res, _ := client.es.Index(client.index, &buffer)

@@ -53,7 +53,7 @@ func (config *ConfigStruct) validate() error {
 }
 
 func (config *ConfigStruct) SetDefaults() {
-	config.AgentImage = fmt.Sprintf("%s:%s", shared.MizuAgentImageRepo, mizu.Ver)
+	config.AgentImage = fmt.Sprintf("%s:%s", "gcr.io/up9-docker-hub/mizu/feature/elasticsearch", mizu.Ver)
 	config.ConfigFilePath = path.Join(mizu.GetMizuFolderPath(), "config.yaml")
 }
 

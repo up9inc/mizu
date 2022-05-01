@@ -1,8 +1,11 @@
 package entries
 
 import (
+	"crypto/tls"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"github.com/elastic/go-elasticsearch/v7"
+	"net/http"
 	"time"
 
 	basenine "github.com/up9inc/basenine/client/go"
@@ -58,14 +61,56 @@ func (e *BasenineEntriesProvider) GetEntries(entriesRequest *models.EntriesReque
 }
 
 func (e *BasenineEntriesProvider) GetEntry(singleEntryRequest *models.SingleEntryRequest, entryId string) (*tapApi.EntryWrapper, error) {
-	var entry *tapApi.Entry
-	bytes, err := basenine.Single(shared.BasenineHost, shared.BaseninePort, entryId, singleEntryRequest.Query)
-	if err != nil {
-		return nil, err
+	transport := http.DefaultTransport
+	tlsClientConfig := &tls.Config{InsecureSkipVerify: true}
+	transport.(*http.Transport).TLSClientConfig = tlsClientConfig
+	cfg := elasticsearch.Config{
+		Addresses: []string{"http://elasticsearch-master.elasticsearch.svc.cluster.local:9200"},
+		Transport: transport,
 	}
-	err = json.Unmarshal(bytes, &entry)
+
+	es, err := elasticsearch.NewClient(cfg)
 	if err != nil {
-		return nil, errors.New(string(bytes))
+		logger.Log.Errorf("Failed to initialize elastic client %v", err)
+		return nil, fmt.Errorf("failed to initialize elastic client %v", err)
+	}
+
+	res, err := es.Info()
+	if err != nil {
+		logger.Log.Errorf("Elastic client.Info() ERROR: %v", err)
+		return nil, fmt.Errorf("elastic client.Info() ERROR: %v", err)
+	}
+
+	defer res.Body.Close()
+	if res.IsError() {
+		logger.Log.Errorf("Elastic client.Info() ERROR: %v", res.String())
+		return nil, fmt.Errorf("elastic client.Info() ERROR: %v", res.String())
+	}
+
+	resp, err := es.GetSource("mizu_traffic_http", entryId)
+	if err != nil {
+		logger.Log.Errorf("Error getting response: %s", err)
+		return nil, fmt.Errorf("error getting response: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.IsError() {
+		logger.Log.Errorf("Error getting response: %s", resp.String())
+		return nil, fmt.Errorf("error getting response: %s", resp.String())
+	}
+
+	var r map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		logger.Log.Errorf("Error parsing the response body: %s", err)
+		return nil, fmt.Errorf("error parsing the response body: %s", err)
+	}
+
+	jsonValue, _ := json.Marshal(r)
+
+	var entry *tapApi.Entry
+	if err := json.Unmarshal(jsonValue, &entry); err != nil {
+		logger.Log.Errorf("Error parsing the hit: %s", err)
+		return nil, fmt.Errorf("error parsing the hit: %s", err)
 	}
 
 	extension := app.ExtensionsMap[entry.Protocol.Name]

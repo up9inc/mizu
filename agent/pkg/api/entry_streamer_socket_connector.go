@@ -10,7 +10,7 @@ import (
 )
 
 type EntryStreamerSocketConnector interface {
-	SendEntry(socketId int, entry *tapApi.Entry, params *WebSocketParams)
+	SendEntry(socketId int, entry *tapApi.Entry, params *WebSocketParams) error
 	SendMetadata(socketId int, metadata *basenine.Metadata)
 	SendToastError(socketId int, err error)
 	CleanupSocket(socketId int)
@@ -18,7 +18,7 @@ type EntryStreamerSocketConnector interface {
 
 type DefaultEntryStreamerSocketConnector struct{}
 
-func (e *DefaultEntryStreamerSocketConnector) SendEntry(socketId int, entry *tapApi.Entry, params *WebSocketParams) {
+func (e *DefaultEntryStreamerSocketConnector) SendEntry(socketId int, entry *tapApi.Entry, params *WebSocketParams) error {
 	var message []byte
 	if params.EnableFullEntries {
 		message, _ = models.CreateFullEntryWebSocketMessage(entry)
@@ -30,7 +30,10 @@ func (e *DefaultEntryStreamerSocketConnector) SendEntry(socketId int, entry *tap
 
 	if err := SendToSocket(socketId, message); err != nil {
 		logger.Log.Error(err)
+		return err
 	}
+
+	return nil
 }
 
 func (e *DefaultEntryStreamerSocketConnector) SendMetadata(socketId int, metadata *basenine.Metadata) {
