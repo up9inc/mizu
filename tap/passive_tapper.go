@@ -59,7 +59,8 @@ var cpuprofile = flag.String("tap.cpuprofile", "", "Write cpu profile") // cpupr
 var memprofile = flag.String("tap.memprofile", "", "Write memory profile")
 
 type TapOpts struct {
-	HostMode bool
+	HostMode         bool
+	ApiServerAddress string
 }
 
 var extensions []*api.Extension                     // global
