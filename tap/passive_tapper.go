@@ -80,6 +80,17 @@ func StartPassiveTapper(opts *TapOpts, outputItems chan *api.OutputChannelItem, 
 		}()
 	}
 
+	if *memprofile != "" {
+		go func() {
+			for {
+				profilePath := profile.ProfilePath(*memprofile + "/" + time.Now().Format("2006-01-02T15:04:05-07:00"))
+				profile.Start(profile.MemProfileHeap, profilePath, profile.NoShutdownHook).Stop()
+				<-time.After(time.Second * 60)
+				logger.Log.Info("Stopped Mem profiling")
+			}
+		}()
+	}
+
 	extensions = extensionsRef
 	filteringOptions = options
 
@@ -251,9 +262,9 @@ func startPassiveTapper(streamsMap api.TcpStreamMap, assembler *tcpAssembler) {
 		assembler.dumpStreamPool()
 	}
 
-	if err := diagnose.DumpMemoryProfile(*memprofile); err != nil {
-		logger.Log.Errorf("Error dumping memory profile %v", err)
-	}
+	// if err := diagnose.DumpMemoryProfile(*memprofile); err != nil {
+	// 	logger.Log.Errorf("Error dumping memory profile %v", err)
+	// }
 
 	assembler.waitAndDump()
 
