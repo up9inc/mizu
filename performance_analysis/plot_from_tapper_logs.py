@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 import pathlib
 import re
@@ -142,6 +143,7 @@ if __name__ == '__main__':
     goroutines_samples_df = pd.concat(goroutines_samples_all_files, axis=1)
 
     group_pattern = r'(\d+)[\w-]*\.\w+$'
+    plt.subplots(constrained_layout=True)
 
     cpu_plot = plt.subplot(8, 2, 1)
     plot(cpu_plot, cpu_samples_df, 'cpu', '', 'cpu (%)', group_pattern)
