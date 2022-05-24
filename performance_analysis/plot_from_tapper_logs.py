@@ -87,7 +87,7 @@ def plot(ax, df: pd.DataFrame, title: str, xlabel: str, ylabel: str, group_patte
 
 
 def get_group_color(names, pattern):
-    props = [int(re.findall(pattern, pathlib.Path(name).name)[0]) for name in names]
+    props = [re.findall(pattern, name)[0] for name in names]
     key = dict(zip(sorted(list(set(props))), range(len(set(props)))))
     n_colors = len(key)
     color_options = plt.get_cmap('jet')(np.linspace(0, 1, n_colors))
@@ -113,14 +113,15 @@ if __name__ == '__main__':
         with open(filename, 'r') as f:
             cpu_samples, rss_samples, count_samples, matched_samples, live_samples, processed_samples, heap_samples, goroutines_samples = extract_samples(f)
 
-        cpu_samples.name = pathlib.Path(filename).name
-        rss_samples.name = pathlib.Path(filename).name
-        count_samples.name = pathlib.Path(filename).name
-        matched_samples.name = pathlib.Path(filename).name
-        live_samples.name = pathlib.Path(filename).name
-        processed_samples.name = pathlib.Path(filename).name
-        heap_samples.name = pathlib.Path(filename).name
-        goroutines_samples.name = pathlib.Path(filename).name
+        name = os.path.join(*pathlib.Path(filename).parts[-2:])
+        cpu_samples.name = name
+        rss_samples.name = name
+        count_samples.name = name
+        matched_samples.name = name
+        live_samples.name = name
+        processed_samples.name = name
+        heap_samples.name = name
+        goroutines_samples.name = name
 
         cpu_samples_all_files.append(cpu_samples)
         rss_samples_all_files.append(rss_samples)
@@ -140,7 +141,7 @@ if __name__ == '__main__':
     heap_samples_df = pd.concat(heap_samples_all_files, axis=1)
     goroutines_samples_df = pd.concat(goroutines_samples_all_files, axis=1)
 
-    group_pattern = r'^\d+'
+    group_pattern = r'(\d+)[\w-]*\.\w+$'
 
     cpu_plot = plt.subplot(8, 2, 1)
     plot(cpu_plot, cpu_samples_df, 'cpu', '', 'cpu (%)', group_pattern)
