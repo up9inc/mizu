@@ -56,3 +56,10 @@ tap/extensions/*/expect
 
 # Ignore *.log files
 *.log
+
+# Python
+.venv
+venv
+
+# Build products
+ui/up9-mizu-common-0.0.0.tgz
