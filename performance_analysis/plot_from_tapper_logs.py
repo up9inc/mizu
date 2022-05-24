@@ -183,6 +183,7 @@ if __name__ == '__main__':
     fig = plt.gcf()
     fig.set_size_inches(20, 18)
 
-    print('Saving graph to graph.png')
-    plt.savefig('graph.png', bbox_inches='tight')
-    
+    # print('Saving graph to graph.png')
+    # plt.savefig('graph.png', bbox_inches='tight')
+
+    plt.show()
