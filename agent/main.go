@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -17,6 +18,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/struCoder/pidusage"
 	"github.com/up9inc/mizu/agent/pkg/dependency"
 	"github.com/up9inc/mizu/agent/pkg/entries"
 	"github.com/up9inc/mizu/agent/pkg/middlewares"
@@ -76,6 +78,18 @@ func main() {
 
 		if *profiler {
 			pprof.Register(app)
+			go func() {
+				memStats := runtime.MemStats{}
+				runtime.ReadMemStats(&memStats)
+				sysInfo, _ := pidusage.GetStat(os.Getpid())
+				logger.Log.Infof(
+					"HeapAlloc: %d, HeapSys: %d, rss: %f",
+					memStats.HeapAlloc,
+					memStats.HeapSys,
+					sysInfo.Memory,
+				)
+				time.Sleep(time.Minute)
+			}()
 		}
 
 		utils.StartServer(app)
