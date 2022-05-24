@@ -143,6 +143,9 @@ if __name__ == '__main__':
     goroutines_samples_df = pd.concat(goroutines_samples_all_files, axis=1)
 
     group_pattern = r'(\d+)[\w-]*\.\w+$'
+    # group_pattern = r'([^\/]+\/\d+)[\w-]*\.\w+$'
+    # group_pattern = '.*'
+
     plt.subplots(constrained_layout=True)
 
     cpu_plot = plt.subplot(8, 2, 1)
