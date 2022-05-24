@@ -29,6 +29,7 @@ function run_single_bench() {
 		else
 			tapper_args+=("-i" "lo")
 		fi
+		tapper_args+=("-tap.memprofile" "$MIZU_BENCHMARK_OUTPUT_DIR/${mode_num}_${mode_str}_${i}")
 		nohup ./agent/build/mizuagent ${tapper_args[@]} > tapper.log 2>&1 &
 
 		log "  $i: Running client (hey)"
