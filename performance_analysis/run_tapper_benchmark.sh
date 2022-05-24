@@ -35,6 +35,8 @@ function run_single_bench() {
 		log "  $i: Running client (hey)"
 		hey -z $MIZU_BENCHMARK_CLIENT_PERIOD -c $MIZU_BENCHMARK_CLIENTS_COUNT -q $MIZU_BENCHMARK_QPS $MIZU_BENCHMARK_URL > /dev/null || return 1
 
+		sleep 300
+
 		log "  $i: Killing tapper"
 		kill -9 $(ps -ef | grep agent/build/mizuagent | grep tap | grep -v grep | awk '{ print $2 }') > /dev/null 2>&1
 
