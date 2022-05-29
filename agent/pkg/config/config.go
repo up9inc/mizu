@@ -33,6 +33,8 @@ func LoadConfig() error {
 	if err = json.Unmarshal(content, &Config); err != nil {
 		return err
 	}
+	Config.OAS = true
+	Config.ServiceMap = true
 	return nil
 }
 
