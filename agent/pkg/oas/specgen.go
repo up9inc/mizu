@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/textproto"
 	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -511,7 +512,12 @@ func fillContent(reqResp reqResp, respContent openapi.Content, ctype string, sam
 		}
 
 		if content.Example == nil && len(exampleMsg) > len(content.Example) {
-			content.Example = exampleMsg
+			_, disableOasExample := os.LookupEnv("MIZU_DEBUG_DISABLE_OAS_EXAMPLE")
+			if disableOasExample {
+				content.Example = nil
+			} else {
+				content.Example = exampleMsg
+			}
 		}
 	}
 
