@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/gin-contrib/pprof"
-	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/up9inc/mizu/agent/pkg/dependency"
 	"github.com/up9inc/mizu/agent/pkg/entries"
@@ -52,6 +52,7 @@ const (
 	socketConnectionRetries    = 30
 	socketConnectionRetryDelay = time.Second * 2
 	socketHandshakeTimeout     = time.Second * 2
+	NginxScriptPath            = "startup_nginx.sh"
 )
 
 func main() {
@@ -72,6 +73,7 @@ func main() {
 		runInTapperMode()
 	} else if *apiServerMode {
 		ginApp := runInApiServerMode(*namespace)
+		startNginx()
 
 		if *profiler {
 			pprof.Register(ginApp)
@@ -90,6 +92,14 @@ func main() {
 	logger.Log.Info("Exiting")
 }
 
+func startNginx() {
+	cmd := exec.Command(NginxScriptPath)
+	if err := cmd.Run(); err != nil {
+		logger.Log.Errorf("Cannot reload nginx %v", err)
+	}
+	logger.Log.Infof("Nginx configuration reloaded")
+}
+
 func hostApi(socketHarOutputChannel chan<- *tapApi.OutputChannelItem) *gin.Engine {
 	ginApp := gin.Default()
 
@@ -101,18 +111,19 @@ func hostApi(socketHarOutputChannel chan<- *tapApi.OutputChannelItem) *gin.Engin
 		SocketOutChannel: socketHarOutputChannel,
 	}
 
-	ginApp.Use(disableRootStaticCache())
+	// ginApp.Use(disableRootStaticCache())
 
-	staticFolder := "./site"
-	indexStaticFile := staticFolder + "/index.html"
-	if err := setUIFlags(indexStaticFile); err != nil {
-		logger.Log.Errorf("Error setting ui flags, err: %v", err)
-	}
+	//staticFolder := "./site"
+	//indexStaticFile := staticFolder + "/index.html"
+	//if err := setUIFlags(indexStaticFile); err != nil {
+	//	logger.Log.Errorf("Error setting ui flags, err: %v", err)
+	//}
 
-	ginApp.Use(static.ServeRoot("/", staticFolder))
-	ginApp.NoRoute(func(c *gin.Context) {
-		c.File(indexStaticFile)
-	})
+	// ginApp.Use(static.ServeRoot("/", staticFolder))
+
+	//ginApp.NoRoute(func(c *gin.Context) {
+	//	c.File(indexStaticFile)
+	//})
 
 	ginApp.Use(middlewares.CORSMiddleware()) // This has to be called after the static middleware, does not work if it's called before
 

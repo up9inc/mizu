@@ -28,7 +28,7 @@ const DefaultTimeout = 2 * time.Second
 
 func NewProvider(url string, retries int, timeout time.Duration) *Provider {
 	return &Provider{
-		url:     url,
+		url:     fmt.Sprintf("%v/api", url),
 		retries: config.GetIntEnvConfig(config.ApiServerRetries, retries),
 		client: &http.Client{
 			Timeout: timeout,

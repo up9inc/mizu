@@ -1,11 +1,11 @@
 import * as axios from "axios";
 
 export const MizuWebsocketURL = process.env.REACT_APP_OVERRIDE_WS_URL ? process.env.REACT_APP_OVERRIDE_WS_URL :
-    window.location.protocol === 'https:' ? `wss://${window.location.host}/ws` : `ws://${window.location.host}/ws`;
+    window.location.protocol === 'https:' ? `wss://${window.location.host}/api/ws` : `ws://${window.location.host}/api/ws`;
 
 const CancelToken = axios.CancelToken;
 
-const apiURL = process.env.REACT_APP_OVERRIDE_API_URL ? process.env.REACT_APP_OVERRIDE_API_URL : `${window.location.origin}/`;
+const apiURL = process.env.REACT_APP_OVERRIDE_API_URL ? process.env.REACT_APP_OVERRIDE_API_URL : `${window.location.origin}`;
 
 let client = null
 let source = null
@@ -26,31 +26,31 @@ export default class Api {
     }
 
     serviceMapData = async () => {
-        const response = await client.get(`/servicemap/get`);
+        const response = await client.get(`/api/servicemap/get`);
         return response.data;
     }
 
     tapStatus = async () => {
-        const response = await client.get("/status/tap");
+        const response = await client.get("/api/status/tap");
         return response.data;
     }
     getTapConfig = async () => {
-        const response = await this.client.get("/config/tap");
+        const response = await this.client.get("/api/config/tap");
         return response.data;
     }
 
     setTapConfig = async (config) => {
-        const response = await this.client.post("/config/tap", { tappedNamespaces: config });
+        const response = await this.client.post("/api/config/tap", { tappedNamespaces: config });
         return response.data;
     }
 
     getEntry = async (id, query) => {
-        const response = await client.get(`/entries/${id}?query=${encodeURIComponent(query)}`);
+        const response = await client.get(`/api/entries/${id}?query=${encodeURIComponent(query)}`);
         return response.data;
     }
 
     fetchEntries = async (leftOff, direction, query, limit, timeoutMs) => {
-        const response = await client.get(`/entries/?leftOff=${leftOff}&direction=${direction}&query=${encodeURIComponent(query)}&limit=${limit}&timeoutMs=${timeoutMs}`).catch(function (thrown) {
+        const response = await client.get(`/api/entries/?leftOff=${leftOff}&direction=${direction}&query=${encodeURIComponent(query)}&limit=${limit}&timeoutMs=${timeoutMs}`).catch(function (thrown) {
             console.error(thrown.message);
             return {};
         });
@@ -58,27 +58,27 @@ export default class Api {
     }
 
     replayRequest = async (requestData) => {
-        const response = await client.post(`/replay/`, requestData);
+        const response = await client.post(`/api/replay/`, requestData);
         return response.data;
     }
 
     getAuthStatus = async () => {
-        const response = await client.get("/status/auth");
+        const response = await client.get("/api/status/auth");
         return response.data;
     }
 
     getOasServices = async () => {
-        const response = await client.get("/oas/");
+        const response = await client.get("/api/oas/");
         return response.data;
     }
 
     getOasByService = async (selectedService) => {
-        const response = await client.get(`/oas/${selectedService}`);
+        const response = await client.get(`/api/oas/${selectedService}`);
         return response.data;
     }
 
     gelAlloasServicesInOneSpec = async () => {
-        const response = await this.client.get("/oas/all");
+        const response = await this.client.get("/api/oas/all");
         return response.data;
     }
 
@@ -90,7 +90,7 @@ export default class Api {
 
         const form = new FormData();
         form.append('query', query)
-        const response = await client.post(`/query/validate`, form, {
+        const response = await client.post(`/api/query/validate`, form, {
             cancelToken: source.token
         }).catch(function (thrown) {
             if (!axios.isCancel(thrown)) {
@@ -117,7 +117,7 @@ export default class Api {
     }
 
     getTrafficStats = async () => {
-        const response = await client.get("/status/trafficStats");
+        const response = await client.get("/api/status/trafficStats");
         return response.data;
     }
 }

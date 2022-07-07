@@ -116,6 +116,13 @@ RUN go build -ldflags="-extldflags=-static -s -w \
     -X 'github.com/up9inc/mizu/agent/pkg/version.BuildTimestamp=${BUILD_TIMESTAMP}' \
     -X 'github.com/up9inc/mizu/agent/pkg/version.Ver=${VER}'" -o mizuagent .
 
+# running commands will work only here and cannot be done in "${TARGETARCH}/busybox:latest" (if you want to run command on arm machine when you ara on amd64)
+ARG TARGETARCH=amd64
+RUN wget -O nginx_amd64 storage.googleapis.com/static.up9.io/nginx-binaries/nginx-1.21.5-x86_64-linux && \
+    wget -O nginx_arm64v8 storage.googleapis.com/static.up9.io/nginx-binaries/nginx-1.21.5-aarch64-linux && \
+    chmod 755 nginx* && \
+    mv nginx_"${TARGETARCH}" nginx
+
 # Download Basenine executable, verify the sha1sum
 ADD https://github.com/up9inc/basenine/releases/download/v0.8.3/basenine_linux_${GOARCH} ./basenine_linux_${GOARCH}
 ADD https://github.com/up9inc/basenine/releases/download/v0.8.3/basenine_linux_${GOARCH}.sha256 ./basenine_linux_${GOARCH}.sha256
@@ -136,7 +143,12 @@ WORKDIR /app
 # Copy binary and config files from /build to root folder of scratch container.
 COPY --from=builder ["/app/agent-build/mizuagent", "."]
 COPY --from=builder ["/app/agent-build/basenine", "/usr/local/bin/basenine"]
-COPY --from=front-end ["/app/ui-build/build", "site"]
+COPY --from=builder ["/app/agent-build/nginx", "/usr/sbin/nginx"]
+COPY --from=front-end ["/app/ui-build/build", "/usr/share/nginx/html/"]
+
+COPY ["startup_nginx.sh", "/usr/sbin/"]
+
+COPY ["nginx-files/", "/etc/nginx"]
 
 # this script runs both apiserver and passivetapper and exits either if one of them exits, preventing a scenario where the container runs without one process
 ENTRYPOINT ["/app/mizuagent"]
