@@ -5,7 +5,7 @@ export const MizuWebsocketURL = process.env.REACT_APP_OVERRIDE_WS_URL ? process.
 
 const CancelToken = axios.CancelToken;
 
-const apiURL = process.env.REACT_APP_OVERRIDE_API_URL ? process.env.REACT_APP_OVERRIDE_API_URL : `${window.location.origin}`;
+const apiURL = process.env.REACT_APP_OVERRIDE_API_URL ? process.env.REACT_APP_OVERRIDE_API_URL : `${window.location.origin}/`;
 
 let client = null
 let source = null
