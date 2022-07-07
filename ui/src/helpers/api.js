@@ -1,7 +1,7 @@
 import * as axios from "axios";
 
 export const MizuWebsocketURL = process.env.REACT_APP_OVERRIDE_WS_URL ? process.env.REACT_APP_OVERRIDE_WS_URL :
-    window.location.protocol === 'https:' ? `wss://${window.location.host}/api/ws` : `ws://${window.location.host}/api/ws`;
+    window.location.protocol === 'https:' ? `wss://${window.location.host}/ws` : `ws://${window.location.host}/ws`;
 
 const CancelToken = axios.CancelToken;
 
