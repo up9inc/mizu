@@ -11,6 +11,20 @@ static __always_inline void tcp_kprobe(struct pt_regs *ctx, struct bpf_map_def *
 	__u64 id = bpf_get_current_pid_tgid();
 	__u32 pid = id >> 32;
 
+	// Get fd (from syscall read/write). Use it to flip a bit flag in file_descriptor_to_ipv4
+	// Why? For an unknown reason we don't see debug prints here from Go programs, only from openssl.
+	// However, we do know that the tcp_sendmsg and tcp_recvmsg are used by Go. We saw it with perf and with bpftrace.
+	// Trying to understand if the debug prints are a false negative by making some effect here and printing it
+	// somewhere else. We set a bit in fdinfo.flags and print it in output_ssl_chunk.
+	__u32 *fd = bpf_map_lookup_elem(&pid_tgid_to_fd, &id);
+	if (fd != NULL) {
+		__u64 key = (__u64) pid << 32 | *fd;
+		struct fd_info *fdinfo = bpf_map_lookup_elem(&file_descriptor_to_ipv4, &key);
+		if (fdinfo != NULL) {
+			fdinfo->flags = fdinfo->flags | (1 << 2);
+		}
+	}
+
 	if (!should_tap(id >> 32)) {
 		return;
 	}

@@ -64,6 +64,12 @@ void sys_enter_write(struct sys_enter_read_write_ctx *ctx) {
 	}
 	
 	struct ssl_info *infoPtr = bpf_map_lookup_elem(&openssl_write_context, &id);
+	// Write fd to a map with key pid+tgid so that it can be retrieved in tcp kprobes
+	__u32 fd = ctx->fd;
+	long err = bpf_map_update_elem(&pid_tgid_to_fd, &id, &fd, BPF_ANY);
+	if (err != 0) {
+		log_error(ctx, LOG_DEBUG, -1, -1, -1);
+	}
 	
 	if (infoPtr == NULL) {
 		return;

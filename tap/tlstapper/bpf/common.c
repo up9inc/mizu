@@ -44,6 +44,8 @@ static __always_inline int add_address_to_chunk(struct pt_regs *ctx, struct tls_
     }
 
     chunk->flags |= (fdinfo->flags & FLAGS_IS_CLIENT_BIT);
+    // Print flags - should see bit #2 set
+    log_error(ctx, LOG_DEBUG, 111, fdinfo->flags, 0);
 
     return 1;
 }
