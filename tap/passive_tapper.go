@@ -51,6 +51,7 @@ var maxLiveStreams = flag.Int("max-live-streams", 500, "Maximum live streams to 
 var iface = flag.String("i", "en0", "Interface to read packets from")
 var fname = flag.String("r", "", "Filename to read from, overrides -i")
 var snaplen = flag.Int("s", 65536, "Snap length (number of bytes max to read per packet")
+var targetSizeMb = flag.Int("target_size_mb", 8, "AF_PACKET target block size (MB)")
 var tstype = flag.String("timestamp_type", "", "Type of timestamps to use")
 var promisc = flag.Bool("promisc", true, "Set promiscuous mode")
 var staleTimeoutSeconds = flag.Int("staletimout", 120, "Max time in seconds to keep connections which don't transmit data")
@@ -210,12 +211,13 @@ func initializePacketSources() error {
 	}
 
 	behaviour := source.TcpPacketSourceBehaviour{
-		SnapLength:  *snaplen,
-		Promisc:     *promisc,
-		Tstype:      *tstype,
-		DecoderName: *decoder,
-		Lazy:        *lazy,
-		BpfFilter:   bpffilter,
+		SnapLength:   *snaplen,
+		TargetSizeMb: *targetSizeMb,
+		Promisc:      *promisc,
+		Tstype:       *tstype,
+		DecoderName:  *decoder,
+		Lazy:         *lazy,
+		BpfFilter:    bpffilter,
 	}
 
 	var err error
@@ -227,7 +229,7 @@ func initializePassiveTapper(opts *TapOpts, outputItems chan *api.OutputChannelI
 	diagnose.InitializeErrorsMap(*debug, *verbose, *quiet)
 	diagnose.InitializeTapperInternalStats()
 
-	mainPacketInputChan = make(chan source.TcpPacketInfo)
+	mainPacketInputChan = make(chan source.TcpPacketInfo, 1000)
 
 	if err := initializePacketSources(); err != nil {
 		logger.Log.Fatal(err)
